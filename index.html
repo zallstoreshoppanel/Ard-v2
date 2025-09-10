@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>ARD-V3 — Full SPA Demo</title>
+<style>
+  :root{
+    --bg:#07050a;
+    --panel:#120812;
+    --accent1:#8b5cf6;
+    --accent2:#c86dd7;
+    --muted:#bcaed9;
+    --glass: rgba(255,255,255,0.03);
+  }
+
+  /* Basic & anti-copy */
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Arial;-webkit-user-select:none;user-select:none}
+  html,body{height:100%;background:var(--bg);color:#eee;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  img{max-width:100%;display:block}
+  button{font-family:inherit}
+
+  /* App wrapper */
+  .wrap{max-width:420px;margin:0 auto;min-height:100vh;padding:12px 14px 160px;position:relative}
+
+  /* Header */
+  header{display:flex;align-items:center;gap:12px;padding:8px 6px;position:sticky;top:8px;background:linear-gradient(180deg,var(--panel),rgba(0,0,0,0.2));z-index:120;border-radius:12px}
+  .hamburger,.backbtn{width:44px;height:44px;border-radius:10px;background:var(--glass);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .title{flex:1;font-weight:700;font-size:18px;letter-spacing:1px;text-align:center}
+  .avatar{width:40px;height:40px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.04);cursor:pointer;background:#222;display:flex;align-items:center;justify-content:center}
+  .avatar img{width:100%;height:100%;object-fit:cover;display:block}
+
+  /* Overlay & side menu */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;z-index:110}
+  .side{position:fixed;left:12px;top:76px;width:320px;max-width:86%;background:linear-gradient(180deg,#0d0810,#19061a);border-radius:12px;padding:12px;box-shadow:0 20px 40px rgba(0,0,0,0.7);display:none;z-index:115}
+  .side h3{color:#fff;margin-bottom:10px;font-size:16px}
+  .side ul{list-style:none}
+  .side li{padding:12px;border-radius:8px;margin-bottom:8px;background:rgba(255,255,255,0.02);cursor:pointer}
+
+  /* Hero / banner */
+  .hero{margin-top:18px;border-radius:14px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,0.6);background:linear-gradient(90deg,#2b1130,#3d1652)}
+  .hero .imgwrap{height:180px;background-size:cover;background-position:center}
+  .hero .badge{padding:12px 14px;color:#fff;font-weight:700;background:linear-gradient(90deg,rgba(0,0,0,0.35),rgba(0,0,0,0.15));border-radius:0 0 12px 12px}
+
+  /* Quick round menu */
+  .quick{display:flex;gap:12px;margin-top:16px;justify-content:space-between;flex-wrap:wrap}
+  .round{width:78px;height:78px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+  .round svg{width:28px;height:28px;margin-bottom:8px}
+  .round small{font-size:12px;color:var(--muted);display:block;text-align:center}
+
+  /* Info banner */
+  .infobox{margin-top:18px;padding:12px;border-radius:12px;background:linear-gradient(90deg,#8b5cf6,#c86dd7);display:flex;align-items:center;gap:12px;box-shadow:0 12px 30px rgba(139,92,246,0.09);cursor:pointer}
+  .infobox .left{width:44px;height:44px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center}
+  .infobox p{font-weight:600;margin:0}
+
+  /* Card / Stats */
+  .card{margin-top:14px;padding:12px;border-radius:12px;background:linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 8px 24px rgba(0,0,0,0.6)}
+  .card h4{font-size:14px;margin-bottom:8px;color:#fff}
+  .stats{display:flex;flex-direction:column;gap:10px}
+  .stat-row{display:flex;justify-content:space-between;align-items:center;border-top:1px solid rgba(255,255,255,0.03);padding:10px 6px}
+  .stat-row:first-child{border-top:0;padding-top:0}
+
+  /* Pages */
+  .pages{position:relative;margin-top:12px}
+  .page{display:none}
+  .page.active{display:block;animation:fade .28s}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Form & Chat */
+  input,textarea{width:100%;padding:10px;margin:8px 0;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:#fff}
+  textarea{resize:vertical}
+  .btn{padding:10px 12px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent1),var(--accent2));color:#fff;cursor:pointer}
+  .chatbox{margin-top:12px;max-height:220px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+  .bubble{padding:10px 12px;border-radius:10px;font-size:13px;max-width:86%}
+  .me{background:linear-gradient(90deg,#6f3cfb44,#ff7aa044);align-self:flex-end;color:#100b12}
+  .bot{background:linear-gradient(90deg,#222,#2b1632);align-self:flex-start;color:#ddd}
+
+  /* Progress */
+  .progress-wrap{margin-top:12px;background:rgba(255,255,255,0.02);padding:8px;border-radius:10px}
+  .progress{height:10px;background:rgba(0,0,0,0.25);border-radius:8px;overflow:hidden}
+  .progress > i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--accent1),var(--accent2));transition:width .25s}
+
+  /* Bottom nav */
+  .bottom{position:fixed;left:0;right:0;bottom:12px;display:flex;justify-content:center;z-index:100}
+  .bbar{width:420px;max-width:96%;background:linear-gradient(90deg,rgba(0,0,0,0.6),rgba(0,0,0,0.35));padding:10px;border-radius:14px;display:flex;justify-content:space-around;box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+  .nav-item{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--muted);cursor:pointer}
+  .nav-item.active{color:#fff}
+
+  /* Settings / profile */
+  .settings{padding:8px}
+  .settings .field{margin-bottom:10px}
+  .settings input[type="text"]{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#fff}
+  .settings input[type="file"]{color:var(--muted);font-size:13px}
+
+  /* small toast */
+  .toast-fixed{position:fixed;left:50%;transform:translateX(-50%);bottom:150px;background:#120917;color:#fff;padding:8px 12px;border-radius:8px;z-index:200;opacity:0;transition:opacity .18s}
+
+  /* responsive */
+  @media (max-width:420px){
+    .hero .imgwrap{height:150px}
+    .wrap{padding-bottom:200px}
+  }
+
+  /* remove text selection for inputs on mobile longpress */
+  input, textarea { -webkit-user-select: text; user-select: text; } /* allow typing/selecting in form fields */
+</style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <!-- Header -->
+    <header>
+      <div class="hamburger" id="hamburger" title="Menu">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="1.6"><path d="M3 7h18M3 12h18M3 17h18" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="title" id="pageTitle">ARD-V3</div>
+      <div class="avatar" id="avatarBtn" title="Account / Settings">
+        <img id="avatarImg" src="https://i.ibb.co/2yQXgW7/default-avatar.png" alt="avatar">
+      </div>
+    </header>
+
+    <!-- Overlay & Sidebar -->
+    <div class="overlay" id="overlay"></div>
+    <aside class="side" id="sidemenu" aria-hidden="true">
+      <h3>Menu</h3>
+      <ul>
+        <li data-action="back">🔙 Back</li>
+        <li data-action="goto" data-page="home">🏠 Home</li>
+        <li data-action="goto" data-page="panel">⚡ Panel</li>
+        <li data-action="goto" data-page="whats">📱 WhatsApp Bug</li>
+        <li data-action="goto" data-page="chat">💬 Chat</li>
+        <li data-action="goto" data-page="acct">👤 Account</li>
+        <li data-action="goto" data-page="settings">⚙️ Settings</li>
+      </ul>
+    </aside>
+
+    <!-- Hero -->
+    <section class="hero" aria-hidden="false">
+      <div class="imgwrap" id="heroImg" style="background-image:url('https://files.catbox.moe/obdbvf.png')"></div>
+      <div class="badge">🔥 New Update — Layer7 methods are now available for VIP users.</div>
+    </section>
+
+    <!-- Quick actions + Info + Stats -->
+    <div class="quick" role="navigation" aria-label="quick actions" style="margin-top:12px">
+      <div class="round" data-page="panel" title="DDoS Panel"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" width="28" height="28"><path d="M12 2v20M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg><small>DDoS</small></div>
+      <div class="round" data-page="whats" title="WhatsApp Bug"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg><small>WhatsApp</small></div>
+      <div class="round" data-page="chat" title="Chat"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Chat</small></div>
+      <div class="round" data-page="acct" title="Account"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" width="28" height="28"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Account</small></div>
+    </div>
+
+    <div class="infobox" id="joinBox" style="margin-top:12px">
+      <div class="left"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="1.6"><path d="M12 12v6M9 9l3-3 3 3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div><strong>🔥 Telegram Channel</strong><div style="font-size:13px;color:var(--muted)">Join to get more info!</div></div>
+    </div>
+
+    <div class="card">
+      <h4>📊 Server Stats</h4>
+      <div class="stats">
+        <div class="stat-row"><div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#9dd3ff" stroke-width="1.6"><path d="M16 11a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg><small style="color:var(--muted)">Online Users</small></div><div id="onlineCount">0</div></div>
+        <div class="stat-row"><div style="display:flex;align-items:center;gap:8px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ffb86b" stroke-width="1.6"><path d="M2 12h20"/></svg><small style="color:var(--muted)">Active Sender</small></div><div id="activeCount">0</div></div>
+      </div>
+    </div>
+
+    <!-- Pages -->
+    <div class="pages">
+
+      <!-- HOME page -->
+      <div class="page active" id="page-home">
+        <div class="card" style="margin-top:12px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="btnBugUI">BUG UI</button>
+            <button class="btn" id="btnBugIOS">CRASH</button>
+            <button class="btn" id="btnSpam">SPAM BUG</button>
+            <button class="btn" id="btnMenu">MENU LAIN</button>
+          </div>
+
+          <!-- Quick home simulator -->
+          <div style="margin-top:14px">
+            <div class="field">
+              <label style="font-size:13px;color:var(--muted)">Nomor target</label>
+              <input type="text" id="homeTarget" placeholder="62812xxxx...">
+            </div>
+            <div class="field">
+              <label style="font-size:13px;color:var(--muted)">Pesan / Perintah</label>
+              <input type="text" id="homeMessage" placeholder="Isi pesan (demo)">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn" id="homeSend">Kirim Sim</button>
+              <button class="btn" id="homeClear">Hapus Log</button>
+            </div>
+
+            <div class="progress-wrap" style="margin-top:12px">
+              <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><div>Progress</div><div id="homeProgressLabel">Idle</div></div>
+              <div class="progress" style="margin-top:8px"><i id="homeProgressBar"></i></div>
+            </div>
+
+            <div class="logbox" id="homeLog" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUG UI page -->
+      <div class="page" id="page-bugui">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">🐞 Bug UI</div>
+            <button class="btn" data-back>Back</button>
+          </div>
+          <div style="margin-top:12px">
+            <div class="field"><label style="font-size:13px;color:var(--muted)">Nomor</label><input id="uiNumber" placeholder="62812..."></div>
+            <div class="field"><label style="font-size:13px;color:var(--muted)">Pesan</label><textarea id="uiMsg" rows="3" placeholder="Isi pesan..."></textarea></div>
+            <div style="display:flex;gap:8px"><button class="btn" id="uiSend">Kirim</button><button class="btn" id="uiClear">Hapus Log</button></div>
+            <div class="logbox" id="uiLog"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CRASH page -->
+      <div class="page" id="page-bugios">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">📱 CRASH</div>
+            <button class="btn" data-back>Back</button>
+          </div>
+          <div style="margin-top:12px">
+            <div class="field"><label style="font-size:13px;color:var(--muted)">Target Device ID / Nomor</label><input id="iosTarget" placeholder="Device / nomor"></div>
+            <div style="display:flex;gap:8px"><button class="btn" id="iosStart">Mulai</button><button class="btn" id="iosStop">Hentikan</button></div>
+            <div class="progress-wrap"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted)"><div>Status</div><div id="iosLabel">Idle</div></div><div class="progress" style="margin-top:8px"><i id="iosBar"></i></div></div>
+            <div class="logbox" id="iosLog"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SPAM BUG page -->
+      <div class="page" id="page-spambug">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">💣 Spam Bug</div>
+            <button class="btn" data-back>Back</button>
+          </div>
+          <div style="margin-top:12px">
+            <div class="field"><label style="font-size:13px;color:var(--muted)">Nomor target</label><input id="spamNumber" placeholder="62812..."></div>
+            <div style="display:flex;gap:8px"><button class="btn" id="spamStart">Mulai Spam</button><button class="btn" id="spamStop">Stop</button></div>
+            <div class="logbox" id="spamBox"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MENU LAIN page -->
+      <div class="page" id="page-menulain">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">📂 Menu Lain</div>
+            <button class="btn" data-back>Back</button>
+          </div>
+          <div style="margin-top:12px">
+            <ul style="padding-left:18px;color:var(--muted)">
+              <li>• Bug Brutal (UI Demo)</li>
+              <li>• Bug Sticker (UI Demo)</li>
+              <li>• Bug Location (UI Demo)</li>
+              <li>• Coming soon...</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT page -->
+      <div class="page" id="page-chat">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">💬 Chat Support</div>
+            <button class="btn" data-back>Back</button>
+          </div>
+          <div class="logbox" id="chatLog"><div class="bot bubble">Selamat datang di chat support (demo).</div></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input id="chatInput" placeholder="Tulis pesan...">
+            <button class="btn" id="chatSend">Kirim</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCOUNT page -->
+      <div class="page" id="page-acct">
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:64px;height:64px;border-radius:12px;overflow:hidden"><img id="acctAvatar" src="https://i.ibb.co/2yQXgW7/default-avatar.png" style="width:100%;height:100%;object-fit:cover" alt="avatar"></div>
+            <div>
+              <div id="acctName" style="font-weight:800">Guest</div>
+              <div style="font-size:13px;color:var(--muted)">ID: xcyazz | Owner</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+            <button class="btn" id="btnManage">Manage Subscription</button>
+            <button class="btn" id="btnAPI">API Keys</button>
+            <button class="btn" id="btnSec">Security</button>
+            <button class="btn" id="btnLogout">Logout</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS page -->
+      <div class="page" id="page-settings">
+        <div class="card settings">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">⚙️ Settings</div>
+            <button class="btn" data-back>Back</button>
+          </div>
+          <div style="margin-top:12px">
+            <div class="field settings">
+              <label style="font-size:13px;color:var(--muted)">Nama</label>
+              <input type="text" id="nameField" placeholder="Masukkan nama">
+            </div>
+            <div class="field">
+              <label style="font-size:13px;color:var(--muted)">Ganti Foto Profile (preview)</label>
+              <input type="file" id="photoField" accept="image/*">
+              <div style="margin-top:10px"><img id="photoPreview" src="" alt="" style="width:84px;height:84px;border-radius:10px;object-fit:cover;display:none;border:2px solid rgba(255,255,255,0.04)"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" id="saveProfile">Simpan</button>
+              <button class="btn" id="resetProfile">Reset</button>
+            </div>
+            <div style="margin-top:12px;color:var(--muted);font-size:13px">Data disimpan di <strong>localStorage</strong> perangkat ini.</div>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- .pages -->
+
+    <!-- bottom nav -->
+    <div class="bottom">
+      <div class="bbar">
+        <div class="nav-item active" data-page="home"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10.5z" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Home</small></div>
+        <div class="nav-item" data-page="chat"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Chat</small></div>
+        <div class="nav-item" data-page="panel"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v20M5 12h14" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Panel</small></div>
+        <div class="nav-item" data-page="whats"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke-linecap="round" stroke-linejoin="round"/></svg><small>WhatsApp</small></div>
+      </div>
+    </div>
+
+  </div> <!-- wrap -->
+
+  <!-- toast placeholder -->
+  <div id="toast" class="toast-fixed" style="opacity:0;pointer-events:none"></div>
+
+<script>
+/* ---------------------------
+   Refs
+   --------------------------- */
+const overlay = document.getElementById('overlay');
+const sidemenu = document.getElementById('sidemenu');
+const hamburger = document.getElementById('hamburger');
+const avatarBtn = document.getElementById('avatarBtn');
+const avatarImg = document.getElementById('avatarImg');
+const pageTitle = document.getElementById('pageTitle');
+const pages = document.querySelectorAll('.page');
+const navItems = document.querySelectorAll('.nav-item');
+const toastEl = document.getElementById('toast');
+
+/* Home refs */
+const btnBugUI = document.getElementById('btnBugUI');
+const btnBugIOS = document.getElementById('btnBugIOS');
+const btnSpam   = document.getElementById('btnSpam');
+const btnMenu   = document.getElementById('btnMenu');
+const homeTarget = document.getElementById('homeTarget');
+const homeMessage = document.getElementById('homeMessage');
+const homeSend = document.getElementById('homeSend');
+const homeClear = document.getElementById('homeClear');
+const homeProgressBar = document.getElementById('homeProgressBar');
+const homeProgressLabel = document.getElementById('homeProgressLabel');
+const homeLog = document.getElementById('homeLog');
+
+/* BUG UI refs */
+const uiNumber = document.getElementById('uiNumber');
+const uiMsg = document.getElementById('uiMsg');
+const uiSend = document.getElementById('uiSend');
+const uiLog = document.getElementById('uiLog');
+const uiClear = document.getElementById('uiClear');
+
+/* iOS refs */
+const iosTarget = document.getElementById('iosTarget');
+const iosStart = document.getElementById('iosStart');
+const iosStop = document.getElementById('iosStop');
+const iosBar = document.getElementById('iosBar');
+const iosLabel = document.getElementById('iosLabel');
+const iosLog = document.getElementById('iosLog');
+
+/* Spam refs */
+const spamNumber = document.getElementById('spamNumber');
+const spamStart = document.getElementById('spamStart');
+const spamStop = document.getElementById('spamStop');
+const spamBox = document.getElementById('spamBox');
+
+/* Chat refs */
+const chatLog = document.getElementById('chatLog');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+
+/* Settings & Profile refs */
+const nameField = document.getElementById('nameField');
+const photoField = document.getElementById('photoField');
+const photoPreview = document.getElementById('photoPreview');
+const saveProfile = document.getElementById('saveProfile');
+const resetProfile = document.getElementById('resetProfile');
+const acctAvatar = document.getElementById('acctAvatar');
+const acctName = document.getElementById('acctName');
+
+/* Stats */
+const onlineCount = document.getElementById('onlineCount');
+const activeCount = document.getElementById('activeCount');
+
+/* ---------------------------
+   Helpers
+   --------------------------- */
+function showToast(msg,ms=1400){
+  toastEl.textContent = msg;
+  toastEl.style.opacity = '1';
+  setTimeout(()=>{ toastEl.style.opacity='0'; }, ms);
+}
+function setActivePage(id){
+  pages.forEach(p=>p.classList.remove('active'));
+  const el = document.getElementById('page-'+id);
+  if(!el) return;
+  el.classList.add('active');
+  // update title & bottom nav highlight
+  pageTitle.textContent = (id==='home')? 'ARD-V3' : id.replace(/(^\w|\-\w)/g, s => s.replace('-',' ').toUpperCase());
+  navItems.forEach(n=> n.classList.toggle('active', n.dataset.page === id));
+  // auto-close side
+  closeSide();
+}
+function openSide(){ overlay.style.display='block'; sidemenu.style.display='block'; sidemenu.setAttribute('aria-hidden','false'); }
+function closeSide(){ overlay.style.display='none'; sidemenu.style.display='none'; sidemenu.setAttribute('aria-hidden','true'); }
+
+/* ---------------------------
+   Init
+   --------------------------- */
+setActivePage('home');
+loadProfile();
+loadLogs();
+
+/* ---------------------------
+   Sidebar & nav listeners
+   --------------------------- */
+hamburger.addEventListener('click', openSide);
+overlay.addEventListener('click', closeSide);
+sidemenu.querySelectorAll('li').forEach(li=>{
+  li.addEventListener('click', ()=>{
+    const action = li.dataset.action;
+    if(action === 'back'){ setActivePage('home'); closeSide(); }
+    if(action === 'goto'){ setActivePage(li.dataset.page); closeSide(); }
+  });
+});
+document.querySelectorAll('[data-back]').forEach(b=> b.addEventListener('click', ()=> setActivePage('home') ) );
+document.querySelectorAll('.round').forEach(r=> r.addEventListener('click', ()=> setActivePage(r.dataset.page) ) );
+document.querySelectorAll('.nav-item').forEach(n=> n.addEventListener('click', ()=> setActivePage(n.dataset.page) ) );
+
+/* Avatar click opens settings */
+avatarBtn.addEventListener('click', ()=> setActivePage('settings') );
+
+/* Prevent pinch-zoom gestures */
+window.addEventListener('gesturestart', e => e.preventDefault());
+window.addEventListener('gesturechange', e => e.preventDefault());
+window.addEventListener('gestureend', e => e.preventDefault());
+
+/* Disable context menu (prevent copy easily) */
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+/* ---------------------------
+   Fake stats
+   --------------------------- */
+let online=12, active=3;
+setInterval(()=>{
+  online = Math.max(0, online + (Math.random()>0.5?1:-1));
+  active = Math.max(0, active + (Math.random()>0.6?1:-1));
+  onlineCount.textContent = online;
+  activeCount.textContent = active;
+},1500);
+
+/* ---------------------------
+   Home quick buttons -> open pages
+   --------------------------- */
+btnBugUI.addEventListener('click', ()=> setActivePage('bugui'));
+btnBugIOS.addEventListener('click', ()=> setActivePage('bugios'));
+btnSpam.addEventListener('click', ()=> setActivePage('spambug'));
+btnMenu.addEventListener('click', ()=> setActivePage('menulain'));
+
+/* ---------------------------
+   Home send simulation
+   --------------------------- */
+let homeTimer = null;
+homeSend.addEventListener('click', ()=>{
+  const t = homeTarget.value.trim();
+  const m = homeMessage.value.trim();
+  if(!t) return showToast('Masukkan nomor/target dulu');
+  if(!m) return showToast('Masukkan pesan dulu');
+
+  const entry = document.createElement('div'); entry.className='bubble bot'; entry.textContent = `Sim: ${m} → ${t} @ ${new Date().toLocaleTimeString()}`;
+  homeLog.prepend(entry);
+
+  if(homeTimer) clearInterval(homeTimer);
+  let pct = 0; homeProgressBar.style.width='0%'; homeProgressLabel.textContent='Running...';
+  homeTimer = setInterval(()=>{
+    pct += Math.floor(Math.random()*14)+6;
+    if(pct >= 100){ pct=100; homeProgressBar.style.width='100%'; homeProgressLabel.textContent='Sukses'; clearInterval(homeTimer);
+      const done = document.createElement('div'); done.className='bubble me'; done.textContent = `Done: ${m} → ${t} @ ${new Date().toLocaleTimeString()}`; homeLog.prepend(done);
+      showToast('Sim selesai (UI only)', 2000); saveLogs();
+    } else { homeProgressBar.style.width = pct + '%'; homeProgressLabel.textContent = pct + '%'; }
+  }, 420);
+  saveLogs();
+});
+homeClear.addEventListener('click', ()=> { homeLog.innerHTML=''; saveLogs(); showToast('Home log dibersihkan'); });
+
+/* ---------------------------
+   BUG UI page
+   --------------------------- */
+uiSend.addEventListener('click', ()=>{
+  const n = uiNumber.value.trim(), m = uiMsg.value.trim();
+  if(!n) return showToast('Isi nomor target');
+  if(!m) return showToast('Isi pesan');
+  uiLog.prepend(Object.assign(document.createElement('div'),{className:'bubble me', textContent: m}));
+  setTimeout(()=>{ uiLog.prepend(Object.assign(document.createElement('div'),{className:'bubble bot', textContent: `Sim sent to ${n} @ ${new Date().toLocaleTimeString()}`})); saveLogs(); }, 900);
+});
+uiClear.addEventListener('click', ()=> { uiLog.innerHTML=''; saveLogs(); showToast('UI log dibersihkan'); });
+
+/* ---------------------------
+   iOS simulation
+   --------------------------- */
+let iosTimer=null, iosPct=0;
+iosStart.addEventListener('click', ()=>{
+  const t = iosTarget.value.trim();
+  if(!t) return showToast('Isi target device/nomor');
+  iosLog.prepend(Object.assign(document.createElement('div'),{className:'bubble bot', textContent:`Started iOS-sim -> ${t} @ ${new Date().toLocaleTimeString()}`}));
+  if(iosTimer) clearInterval(iosTimer);
+  iosPct = 0; iosBar.style.width='0%'; iosLabel.textContent='Running...';
+  iosTimer = setInterval(()=>{
+    iosPct += Math.floor(Math.random()*15)+5;
+    if(iosPct >= 100){ iosPct = 100; iosBar.style.width='100%'; iosLabel.textContent='Sukses'; clearInterval(iosTimer);
+      iosLog.prepend(Object.assign(document.createElement('div'),{className:'bubble me', textContent:`Completed iOS-sim -> ${t} @ ${new Date().toLocaleTimeString()}`})); showToast('iOS sim selesai',2000); saveLogs();
+    } else { iosBar.style.width = iosPct + '%'; iosLabel.textContent = iosPct + '%'; saveLogs(); }
+  }, 520);
+});
+iosStop.addEventListener('click', ()=>{ if(iosTimer) clearInterval(iosTimer); iosBar.style.width='0%'; iosLabel.textContent='Stopped'; iosLog.prepend(Object.assign(document.createElement('div'),{className:'bubble bot', textContent:`iOS-sim stopped @ ${new Date().toLocaleTimeString()}`})); saveLogs(); });
+
+/* ---------------------------
+   Spam simulation
+   --------------------------- */
+let spamTimer=null, spamCount=0;
+spamStart.addEventListener('click', ()=>{
+  const n = spamNumber.value.trim();
+  if(!n) return showToast('Isi nomor target');
+  spamBox.innerHTML=''; spamCount=0;
+  spamTimer = setInterval(()=>{
+    spamCount++;
+    spamBox.prepend(Object.assign(document.createElement('div'),{className:'bubble me', textContent:`Spam ${spamCount} -> ${n}`}));
+    if(spamCount>=12){ clearInterval(spamTimer); showToast('Spam selesai (sim)',1600); saveLogs(); }
+  }, 220);
+});
+spamStop.addEventListener('click', ()=>{ if(spamTimer) clearInterval(spamTimer); spamBox.prepend(Object.assign(document.createElement('div'),{className:'bubble bot', textContent:`Spam stopped @ ${new Date().toLocaleTimeString()}`})); saveLogs(); });
+
+/* ---------------------------
+   Chat send
+   --------------------------- */
+chatSend.addEventListener('click', ()=>{
+  const txt = chatInput.value.trim();
+  if(!txt) return showToast('Tulis pesan dulu');
+  chatLog.appendChild(Object.assign(document.createElement('div'),{className:'bubble me', textContent:txt}));
+  chatInput.value='';
+  setTimeout(()=>{ chatLog.appendChild(Object.assign(document.createElement('div'),{className:'bubble bot', textContent:'Terima kasih, ini balasan otomatis (demo).'})); chatLog.scrollTop = chatLog.scrollHeight; saveLogs(); },900);
+});
+
+/* ---------------------------
+   Profile & Settings
+   --------------------------- */
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem('dv_profile');
+    const p = raw ? JSON.parse(raw) : {};
+    const name = p.name || 'Guest';
+    const photo = p.photo || 'https://i.ibb.co/2yQXgW7/default-avatar.png';
+    avatarImg.src = photo;
+    acctAvatar.src = photo;
+    acctName.textContent = name;
+    nameField.value = name;
+    // hide preview initially
+    photoPreview.style.display = 'none';
+    photoPreview.src = '';
+  } catch(e){ console.warn(e); }
+}
+function saveProfileToStorage(name, photoData){
+  const obj = { name: name || 'Guest', photo: photoData || avatarImg.src };
+  localStorage.setItem('dv_profile', JSON.stringify(obj));
+  loadProfile();
+}
+photoField.addEventListener('change', ()=>{
+  const f = photoField.files && photoField.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    photoPreview.src = e.target.result;
+    photoPreview.style.display = 'inline-block';
+  };
+  reader.readAsDataURL(f);
+});
+saveProfile.addEventListener('click', ()=>{
+  const newName = (nameField.value && nameField.value.trim()) ? nameField.value.trim() : 'Guest';
+  const f = photoField.files && photoField.files[0];
+  if(f){
+    const reader = new FileReader();
+    reader.onload = e => {
+      saveProfileToStorage(newName, e.target.result);
+      photoField.value = '';
+      photoPreview.style.display = 'none';
+      showToast('Profile tersimpan');
+    };
+    reader.readAsDataURL(f);
+  } else {
+    saveProfileToStorage(newName, null);
+    showToast('Nama tersimpan');
+  }
+});
+resetProfile.addEventListener('click', ()=>{
+  localStorage.removeItem('dv_profile');
+  loadProfile();
+  showToast('Profile di-reset');
+});
+loadProfile();
+
+/* ---------------------------
+   Logs persistence
+   --------------------------- */
+function saveLogs(){
+  try{
+    localStorage.setItem('dv_wa_log', document.getElementById('waLog') ? document.getElementById('waLog').innerHTML : '');
+    localStorage.setItem('dv_panel_log', document.getElementById('panelLog') ? document.getElementById('panelLog').innerHTML : '');
+    localStorage.setItem('dv_chat_log', chatLog ? chatLog.innerHTML : '');
+    localStorage.setItem('dv_home_log', homeLog ? homeLog.innerHTML : '');
+    localStorage.setItem('dv_ui_log', uiLog ? uiLog.innerHTML : '');
+    localStorage.setItem('dv_ios_log', iosLog ? iosLog.innerHTML : '');
+    localStorage.setItem('dv_spam_log', spamBox ? spamBox.innerHTML : '');
+  }catch(e){}
+}
+function loadLogs(){
+  try{
+    const hl = localStorage.getItem('dv_home_log');
+    const uil = localStorage.getItem('dv_ui_log');
+    const isl = localStorage.getItem('dv_ios_log');
+    const spl = localStorage.getItem('dv_spam_log');
+    const cl = localStorage.getItem('dv_chat_log');
+    if(hl && homeLog) homeLog.innerHTML = hl;
+    if(uil && uiLog) uiLog.innerHTML = uil;
+    if(isl && iosLog) iosLog.innerHTML = isl;
+    if(spl && spamBox) spamBox.innerHTML = spl;
+    if(cl && chatLog) chatLog.innerHTML = cl;
+  }catch(e){}
+}
+/* autosave logs */
+setInterval(saveLogs, 2500);
+
+/* ESC closes side */
+window.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeSide(); });
+
+/* small: clicking joinBox opens telegram (sample) */
+document.getElementById('joinBox').addEventListener('click', ()=> window.open('https://t.me/byzalls','_blank'));
+</script>
+</body>
+</html>
